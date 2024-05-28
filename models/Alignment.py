@@ -10,6 +10,7 @@ from models.Net import Net, get_segmentation
 from models.sean_codes.models.pix2pix_model import Pix2PixModel, SEAN_OPT, encode_sean, decode_sean
 from utils.image_utils import DilateErosion
 from utils.save_utils import save_vis_mask, save_gen_image, save_latents
+from torchvision.utils import save_image
 
 
 class Alignment(nn.Module):
@@ -70,6 +71,8 @@ class Alignment(nn.Module):
             rot_mask = inp_mask2
 
         # Shape Adaptor
+        print(inp_mask1[0, 0, ...].shape)
+        print(rot_mask[0, 0, ...].shape)
         if img1_in is not img2_in:
             face_1, hair_1 = get_hair_face_code(self.mask_generator, inp_mask1[0, 0, ...])
             face_2, hair_2 = get_hair_face_code(self.mask_generator, rot_mask[0, 0, ...])
@@ -120,6 +123,8 @@ class Alignment(nn.Module):
         inp_mask1, hair_mask1, inp_mask2, hair_mask2, target_mask, hair_mask_target = (
             self.shape_module(im_name1, im_name2, name_to_embed, only_target=False, **kwargs)
         )
+
+        save_image(target_mask.cuda().float(), 'target_mask.jpg', normalize=True)
 
         images = torch.cat([img1_in, img2_in], dim=0)
         labels = torch.cat([inp_mask1, inp_mask2], dim=0)

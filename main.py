@@ -2,49 +2,94 @@ import argparse
 import os
 import sys
 from pathlib import Path
+import torch
 
 from torchvision.utils import save_image
 from tqdm.auto import tqdm
 
 from hair_swap import HairFast, get_parser
+import time
+import cv2
+import torchvision.transforms as T
+from PIL import Image
+
+def ImageFolderUtils(dir_path):
+    out_path = 'datasets/FFHQ_TrueScale'
+    for img_path in os.listdir(dir_path):
+        img = cv2.imread(os.path.join(dir_path, img_path))
+        img = img[:, 1024:2048, :]
+        cv2.imwrite(out_path + '/' + img_path, img)
+        # print(img.shape)
+        # exit()
+    print('done')
 
 
 def main(model_args, args):
+    start_time = time.time()
     hair_fast = HairFast(model_args)
+    dir_path = 'datasets/FFHQ_TrueScale'
+    
+    with open('datasets/testPair.txt') as file:
+        lines = [line.rstrip() for line in file]
+        cnt = 0
+        for line in lines:
+            cnt += 1
+            source, shape = line.split(' ')
+            color = shape
 
-    experiments: list[str | tuple[str, str, str]] = []
-    if args.file_path is not None:
-        with open(args.file_path, 'r') as file:
-            experiments.extend(file.readlines())
+            face_path = os.path.join(dir_path, source)
+            shape_path = os.path.join(dir_path, shape)
+            color_path = os.path.join(dir_path, color)
+            
+            transform = T.Compose([T.ToTensor()])
+            source_im = transform(Image.open(face_path)).to('cuda')
+            shape_im = transform(Image.open(shape_path)).to('cuda')
 
-    if all(path is not None for path in (args.face_path, args.shape_path, args.color_path)):
-        experiments.append((args.face_path, args.shape_path, args.color_path))
+            final_image = hair_fast.swap(face_path, shape_path, color_path, benchmark=args.benchmark, exp_name=None)
+            save_image(final_image, 'test_outputs/' + str(cnt).zfill(10) + '.jpg')
+            save_image(torch.cat([final_image, source_im, shape_im], dim=2), 'test_outputsFull/' + str(cnt).zfill(10) + '.jpg')
+            # break
 
-    for exp in tqdm(experiments):
-        if isinstance(exp, str):
-            file_1, file_2, file_3 = exp.split()
-        else:
-            file_1, file_2, file_3 = exp
+    
 
-        face_path = args.input_dir / file_1
-        shape_path = args.input_dir / file_2
-        color_path = args.input_dir / file_3
+    # experiments: list[str | tuple[str, str, str]] = []
+    # if args.file_path is not None:
+    #     with open(args.file_path, 'r') as file:
+    #         experiments.extend(file.readlines())
 
-        base_name = '_'.join([path.stem for path in (face_path, shape_path, color_path)])
-        exp_name = base_name if model_args.save_all else None
+    # if all(path is not None for path in (args.face_path, args.shape_path, args.color_path)):
+    #     experiments.append((args.face_path, args.shape_path, args.color_path))
 
-        if isinstance(exp, str) or args.result_path is None:
-            os.makedirs(args.output_dir, exist_ok=True)
-            output_image_path = args.output_dir / f'{base_name}.png'
-        else:
-            os.makedirs(args.result_path.parent, exist_ok=True)
-            output_image_path = args.result_path
+    # print('start')
+    # for exp in tqdm(experiments):
+    #     if isinstance(exp, str):
+    #         file_1, file_2, file_3 = exp.split()
+    #     else:
+    #         file_1, file_2, file_3 = exp
 
-        final_image = hair_fast.swap(face_path, shape_path, color_path, benchmark=args.benchmark, exp_name=exp_name)
-        save_image(final_image, output_image_path)
+    #     face_path = args.input_dir / file_1
+    #     shape_path = args.input_dir / file_2
+    #     color_path = args.input_dir / file_3
+
+    #     base_name = '_'.join([path.stem for path in (face_path, shape_path, color_path)])
+    #     exp_name = base_name if model_args.save_all else None
+
+    #     if isinstance(exp, str) or args.result_path is None:
+    #         os.makedirs(args.output_dir, exist_ok=True)
+    #         output_image_path = args.output_dir / f'{base_name}.png'
+    #     else:
+    #         os.makedirs(args.result_path.parent, exist_ok=True)
+    #         output_image_path = args.result_path
+
+    #     final_image = hair_fast.swap(face_path, shape_path, color_path, benchmark=args.benchmark, exp_name=exp_name)
+    #     save_image(final_image, output_image_path)
+    #     print("--- %s seconds ---" % (time.time() - start_time))
 
 
 if __name__ == "__main__":
+
+    # ImageFolderUtils('datasets/FFHQ_processed')
+    # exit()
     model_parser = get_parser()
     parser = argparse.ArgumentParser(description='HairFast evaluate')
     parser.add_argument('--input_dir', type=Path, default='', help='The directory of the images to be inverted')

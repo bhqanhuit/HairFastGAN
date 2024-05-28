@@ -12,6 +12,7 @@ from models.Net import Net, get_segmentation
 from models.encoder4editing.utils.model_utils import setup_model, get_latents
 from utils.bicubic import BicubicDownSample
 from utils.save_utils import save_gen_image, save_latents
+from torchvision.utils import save_image
 
 
 class Embedding(nn.Module):
@@ -85,10 +86,33 @@ class Embedding(nn.Module):
             if len(images_to_name) > 1:
                 hair_mask = torch.where(masks == 13, torch.ones_like(masks, device=device),
                                         torch.zeros_like(masks, device=device))
+                
+                hair_mask_temp = (torch.ones_like(hair_mask) - hair_mask.float())
                 hair_mask = F.interpolate(hair_mask.float(), size=(32, 32), mode='bicubic')
+                hair_mask_temp_real = F.interpolate(hair_mask_temp.float(), size=(32, 32), mode='bicubic')
+
+
 
                 latent_F_from_W = self.net.generator([latent_W], input_is_latent=True, return_latents=False,
                                                      start_layer=0, end_layer=3)[0]
+                
+                temp = latent_F[0] * hair_mask_temp_real
+                temp_imge = self.net.generator([latent_S], input_is_latent=True, return_latents=False,
+                                                  start_layer=4, end_layer=8, layer_in=temp)
+                
+
+                # print(latent_F.shape, hair_mask.shape)
+                # print((latent_F * hair_mask).shape)
+                # print(torch.cat([hair_mask[0], hair_mask[0], hair_mask[0]], dim=0).shape)
+                
+                # store_item = torch.cat([hair_mask_temp[0], hair_mask_temp[0],  hair_mask_temp[0]], dim=0)
+                # store_item_2 = F.interpolate(temp_imge[0], size=(256, 256), mode='bilinear')
+                
+
+                # save_image(temp_imge[0], 'hehe.jpg', normalize=True)
+                # save_image(torch.cat([im_256[0], store_item, store_item_2[0]], dim=2), 'hehe1.jpg', normalize=True)
+
+                # exit()
                 latent_F = latent_F + self.opts.mixing * hair_mask * (latent_F_from_W - latent_F)
 
             for k, names in enumerate(names):

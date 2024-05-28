@@ -159,3 +159,6 @@ test_coef/*.png
 /pretrained_models/
 /logs/
 /input/
+*.png
+losses/.DS_Store
+*.jpeg

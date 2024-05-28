@@ -28,6 +28,8 @@ def main(model_args, args):
     start_time = time.time()
     hair_fast = HairFast(model_args)
     dir_path = 'datasets/FFHQ_TrueScale'
+
+    exit()
     
     with open('datasets/testPair.txt') as file:
         lines = [line.rstrip() for line in file]

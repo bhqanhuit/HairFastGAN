@@ -1,7 +1,5 @@
 import math
 import random
-import functools
-import operator
 
 import torch
 from torch import nn

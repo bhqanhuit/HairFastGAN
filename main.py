@@ -7,6 +7,7 @@ import torch
 from torchvision.utils import save_image
 from tqdm.auto import tqdm
 
+
 from hair_swap import HairFast, get_parser
 import time
 import cv2
@@ -92,7 +93,7 @@ def main(model_args, args):
 if __name__ == "__main__":
 
     # ImageFolderUtils('datasets/FFHQ_processed')
-    # exit()
+    exit()
     model_parser = get_parser()
     parser = argparse.ArgumentParser(description='HairFast evaluate')
     parser.add_argument('--input_dir', type=Path, default='', help='The directory of the images to be inverted')

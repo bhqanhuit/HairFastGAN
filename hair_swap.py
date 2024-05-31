@@ -135,6 +135,7 @@ def get_parser():
 
 
 if __name__ == '__main__':
-    model_args = get_parser()
-    args = model_args.parse_args()
-    hair_fast = HairFast(args)
+    pass
+    # model_args = get_parser()
+    # args = model_args.parse_args()
+    # hair_fast = HairFast(args)

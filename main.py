@@ -6,7 +6,7 @@ import torch
 
 from torchvision.utils import save_image
 from tqdm.auto import tqdm
-
+from scale_images import image_scale
 
 from hair_swap import HairFast, get_parser
 import time
@@ -30,7 +30,7 @@ def main(model_args, args):
     hair_fast = HairFast(model_args)
     origin_scale = 'datasets/FFHQ_TrueScale'
     dir_path = 'datasets/FFHQ_Resized'
-    ImageFolderUtils(dir_path)
+    # ImageFolderUtils(dir_path)
     
     
     with open('datasets/testPair.txt') as file:
@@ -44,14 +44,21 @@ def main(model_args, args):
             face_path = os.path.join(dir_path, source)
             shape_path = os.path.join(origin_scale, shape)
             color_path = os.path.join(origin_scale, color)
+
+            scaled_img = image_scale(shape_path, face_path).to('cuda')
             
             transform = T.Compose([T.ToTensor()])
             source_im = transform(Image.open(face_path)).to('cuda')
             shape_im = transform(Image.open(shape_path)).to('cuda')
+            color_im = transform(Image.open(shape_path)).to('cuda')
 
-            final_image = hair_fast.swap(face_path, shape_path, color_path, benchmark=args.benchmark, exp_name=None)
-            save_image(final_image, 'test_outputs_dif_face/' + str(cnt).zfill(10) + '.jpg')
-            save_image(torch.cat([final_image, source_im, shape_im], dim=2), 'test_outputsFull_dif_face/' + str(cnt).zfill(10) + '.jpg')
+            transform_toPIL = T.ToPILImage()
+
+            # final_image = hair_fast.swap(face_path, shape_path, color_path, benchmark=args.benchmark, exp_name=None)
+            final_image = hair_fast.swap(transform_toPIL(scaled_img), transform_toPIL(shape_im), transform_toPIL(color_im), benchmark=args.benchmark, exp_name=None)
+            save_image(final_image, 'test_outputs_FaceScale/' + str(cnt).zfill(10) + '.jpg')
+            save_image(torch.cat([final_image, source_im, shape_im, scaled_img], dim=2), 'test_outputsFull_FaceScale/' + str(cnt).zfill(10) + '.jpg')
+            # exit()
             # break
 
     
@@ -92,8 +99,6 @@ def main(model_args, args):
 
 if __name__ == "__main__":
 
-    ImageFolderUtils('datasets/FFHQ_processed')
-    exit()
     model_parser = get_parser()
     parser = argparse.ArgumentParser(description='HairFast evaluate')
     parser.add_argument('--input_dir', type=Path, default='', help='The directory of the images to be inverted')

@@ -83,30 +83,34 @@ def center_crop(img, dim):
 	return crop_img
 
 
+def image_scale(img1_path, img2_path):
+    img1 = cv2.imread(img1_path)
+    img2 = cv2.imread(img2_path)
+        
+    resized_face = scale_face_with_landmarks(img2, img1)
 
-img1 = cv2.imread('datasets/FFHQ_TrueScale/08000.png')
-img2 = cv2.imread('datasets/FFHQ_Resized/08289.png')
+    # resized_face = AddPadding(resized_face)
+    resized_face = center_crop(resized_face, (1024, 1024))
+    # print(resized_face.shape)
+    image_transform = transforms.Compose([
+                                transforms.ToTensor()
+                                ])
 
-resized_face = scale_face_with_landmarks(img2, img1)
-
-# resized_face = AddPadding(resized_face)
-resized_face = center_crop(resized_face, (1024, 1024))
-# print(resized_face.shape)
-image_transform = transforms.Compose([
-                            transforms.ToTensor()
-                            ])
-
-img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
-img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
-resized_face = cv2.cvtColor(resized_face, cv2.COLOR_BGR2RGB)
-
-
-img1 = image_transform(img1)
-img2 = image_transform(img2)
-resized_face = image_transform(resized_face)
+    img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
+    img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
+    resized_face = cv2.cvtColor(resized_face, cv2.COLOR_BGR2RGB)
 
 
-res_con = torch.cat([img1, img2, resized_face], dim=2)
-save_image(res_con, 'temp/haha.jpg', normalize=True)
+    img1 = image_transform(img1)
+    img2 = image_transform(img2)
+    resized_face = image_transform(resized_face)
+    # print(resized_face.shape)
+
+    res_con = torch.cat([img1, img2, resized_face], dim=2)
+    save_image(res_con, 'temp/haha.jpg', normalize=True)
+
+    return resized_face
+
+
 
 

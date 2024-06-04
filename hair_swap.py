@@ -46,7 +46,6 @@ class HairFast:
 
         # Embedding stage
         name_to_embed = self.embed.embedding_images(images_to_name, **kwargs)
-        # print(name_to_embed)
 
         # Alignment stage
         align_shape = self.align.align_images('face', 'shape', name_to_embed, **kwargs)

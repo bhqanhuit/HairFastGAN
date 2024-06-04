@@ -30,8 +30,8 @@ def main(model_args, args):
     hair_fast = HairFast(model_args)
     origin_scale = 'datasets/FFHQ_TrueScale'
     dir_path = 'datasets/FFHQ_Resized'
-    # ImageFolderUtils(dir_path)
-    # exit()
+    ImageFolderUtils(dir_path)
+    
     
     with open('datasets/testPair.txt') as file:
         lines = [line.rstrip() for line in file]
@@ -92,7 +92,7 @@ def main(model_args, args):
 
 if __name__ == "__main__":
 
-    # ImageFolderUtils('datasets/FFHQ_processed')
+    ImageFolderUtils('datasets/FFHQ_processed')
     exit()
     model_parser = get_parser()
     parser = argparse.ArgumentParser(description='HairFast evaluate')

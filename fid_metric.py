@@ -60,6 +60,7 @@ def main():
     datasets['Same_Scale'] = parallel_load_images('test_outputs', list_image_files('test_outputs'))
     datasets['Hair_DownScale'] = parallel_load_images('test_outputs_dif_hair', list_image_files('test_outputs_dif_hair'))
     datasets['Face_DownScale'] = parallel_load_images('test_outputs_dif_face', list_image_files('test_outputs_dif_face'))
+    datasets['Hair_Resized'] = parallel_load_images('test_outputs_FaceScale', list_image_files('test_outputs_FaceScale'))
 
     print('Loading')
 
@@ -72,8 +73,8 @@ def main():
     df_result = pd.concat([df_fid, df_clip], axis=1).round(2)
     print(df_result)
 
-    os.makedirs('log', exist_ok=True)
-    df_result.to_csv('metric.csv', index=True)
+    # os.makedirs('log', exist_ok=True)
+    # df_result.to_csv('metric.csv', index=True)
 
 
 if __name__ == '__main__':

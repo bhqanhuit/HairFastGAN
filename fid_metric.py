@@ -56,11 +56,12 @@ def main():
     # source = 'datasets/FFHQ_TrueScale'
     datasets['FFHQ_TrueScale'] = parallel_load_images('datasets/FFHQ_TrueScale', list_image_files('datasets/FFHQ_TrueScale'))
 
-    # for method, path_dataset in args.methods_dataset:
-    datasets['Same_Scale'] = parallel_load_images('test_outputs', list_image_files('test_outputs'))
-    datasets['Hair_DownScale'] = parallel_load_images('test_outputs_dif_hair', list_image_files('test_outputs_dif_hair'))
-    datasets['Face_DownScale'] = parallel_load_images('test_outputs_dif_face', list_image_files('test_outputs_dif_face'))
-    datasets['Hair_Resized'] = parallel_load_images('test_outputs_FaceScale', list_image_files('test_outputs_FaceScale'))
+    
+    datasets['Same_Scale'] = parallel_load_images('test_outputs_clip', list_image_files('test_outputs_clip'))
+    # datasets['Same_Scale'] = parallel_load_images('test_outputs', list_image_files('test_outputs'))
+    # datasets['Hair_DownScale'] = parallel_load_images('test_outputs_dif_hair', list_image_files('test_outputs_dif_hair'))
+    # datasets['Face_DownScale'] = parallel_load_images('test_outputs_dif_face', list_image_files('test_outputs_dif_face'))
+    # datasets['Hair_Resized'] = parallel_load_images('test_outputs_FaceScale', list_image_files('test_outputs_FaceScale'))
 
     print('Loading')
 

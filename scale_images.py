@@ -83,15 +83,13 @@ def center_crop(img, dim):
 	return crop_img
 
 
-def image_scale(img1_path, img2_path):
+def image_scale(img1_path, img2_path, name=None):
     img1 = cv2.imread(img1_path)
     img2 = cv2.imread(img2_path)
         
     resized_face = scale_face_with_landmarks(img2, img1)
 
-    # resized_face = AddPadding(resized_face)
     resized_face = center_crop(resized_face, (1024, 1024))
-    # print(resized_face.shape)
     image_transform = transforms.Compose([
                                 transforms.ToTensor()
                                 ])
@@ -104,12 +102,26 @@ def image_scale(img1_path, img2_path):
     img1 = image_transform(img1)
     img2 = image_transform(img2)
     resized_face = image_transform(resized_face)
-    # print(resized_face.shape)
 
-    res_con = torch.cat([img1, img2, resized_face], dim=2)
-    save_image(res_con, 'temp/haha.jpg', normalize=True)
+    # res_con = torch.cat([img1, img2, resized_face], dim=2)
+    # save_image(res_con, 'temp/' + str(cnt).zfill(10) + '.png', normalize=True)
+    # save_image(resized_face, 'datasets/FFHQ_UpScale/' + name, normalize=True)
 
     return resized_face
+
+cnt = 0
+if (__name__ == "__main__"):
+    
+    with open('datasets/testPair.txt') as file:
+        lines = [line.rstrip() for line in file]
+        for line in lines:
+            cnt += 1
+            source, shape = line.split(' ') 
+            print(source, shape)
+            image_scale('datasets/FFHQ_TrueScale/' + shape, 'datasets/FFHQ_Resized/' + source, source)
+            
+
+
 
 
 

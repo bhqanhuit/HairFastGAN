@@ -15,36 +15,91 @@ import torchvision.transforms as transforms
 from PIL import Image
 import torch.nn.functional as F
 import torchvision
+from models.face_parsing.model import BiSeNet
+import matplotlib.pyplot as plt
+import pydensecrf.densecrf as dcrf
+from pydensecrf.utils import unary_from_softmax
 
 device = 'cuda'
 
-image_transform = transforms.Compose([
-                            # transforms.Resize((1024, 1024)),
-                            transforms.ToTensor(),
-                            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
+def preprocess_image(image_path):
+    transform = transforms.Compose([
+        transforms.Resize((512, 512)),
+        transforms.ToTensor(),
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+    ])
+
+    image = Image.open(image_path).convert('RGB')
+    image = transform(image).unsqueeze(0)  # Add batch dimension
+    return image
+
+def load_bisenet_model():
+    n_classes = 19  # Number of classes for segmentation
+    model = BiSeNet(n_classes=n_classes)
+    model.load_state_dict(torch.load('pretrained_models/BiSeNet/face_parsing_79999_iter.pth'))
+    model.eval()
+    return model
+
+def visualize_masks(image_path, output_np, overlap_mask):
+    image = Image.open(image_path).resize((512, 512))
+    plt.figure(figsize=(15, 5))
+    
+    plt.subplot(1, 3, 1)
+    plt.title('Original Image')
+    plt.imshow(image)
+    
+    plt.subplot(1, 3, 2)
+    plt.title('Soft Mask')
+    plt.imshow(np.argmax(output_np, axis=0), cmap='jet', alpha=0.5)
+    
+    plt.subplot(1, 3, 3)
+    plt.title('Overlap Mask')
+    plt.imshow(overlap_mask, cmap='jet', alpha=0.5)
+    plt.savefig('foo.png')
+
+    # plt.show()
+
+def apply_crf(image, softmax):
+    h, w = image.shape[:2]
+    d = dcrf.DenseCRF2D(w, h, softmax.shape[0])
+    unary = unary_from_softmax(softmax)
+    d.setUnaryEnergy(unary)
+    d.addPairwiseGaussian(sxy=3, compat=3)
+    d.addPairwiseBilateral(sxy=50, srgb=13, rgbim=image, compat=10)
+    Q = d.inference(5)
+    return np.array(Q).reshape((softmax.shape[0], softmax.shape[1], softmax.shape[2]))
+
+
+
+
+def create_overlap_mask(output_np):
+    hair_mask = output_np[17, :, :]
+    face_mask = output_np[1, :, :]
+    overlap_mask = np.minimum(hair_mask, face_mask)
+    return overlap_mask
+
 
 if __name__ == "__main__":
-    
-    print(os.environ.get('CUDA_PATH'))
-    # source_path = 'IMG_4129_Large.jpeg'
+    model = load_bisenet_model()
+    print(f'Done loading BiseNet')
 
-    # im = Image.open(source_path)
-    # print(im)
+    image_path = 'datasets/FFHQ_TrueScale/08173.png'
+    input_image = preprocess_image(image_path)
 
-    # width, height = im.size   # Get dimensions
+    with torch.no_grad():
+        output = model(input_image)[0]
+        output = F.softmax(output, dim=1)  # Apply softmax to get probabilities
+        
+    output_np = output.cpu().numpy().squeeze()
+    overlap_mask = create_overlap_mask(output_np)
+    image_np = np.array(Image.open(image_path).resize((512, 512)))
+    crf_output = apply_crf(image_np, output_np)
+    print(crf_output.shape)
+    print(crf_output.dtype)
 
-    # left = (width - 850)/2
-    # top = (height - 800)/2
-    # right = (width + 850)/2
-    # bottom = (height + 900)/2
+    visualize_masks(image_path, crf_output, overlap_mask)
 
-    # # Crop the center of the image
-    # im = im.crop((left, top, right, bottom))
-    # im = image_transform(im)
-    # im = F.interpolate(im.unsqueeze(0), size=(1024, 1024), mode='bicubic')
-    # save_image(im, 'test_img.png', normalize=True)
-    # print(im.shape)
-    
+
     
 
 

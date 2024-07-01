@@ -29,7 +29,7 @@ def main(model_args, args):
     start_time = time.time()
     hair_fast = HairFast(model_args)
     origin_scale = 'datasets/FFHQ_TrueScale'
-    dir_path = 'datasets/FFHQ_Resized'
+    # dir_path = 'datasets/FFHQ_Resized'
     # ImageFolderUtils(dir_path)
     
     
@@ -41,10 +41,10 @@ def main(model_args, args):
             source, shape = line.split(' ')
             color = shape
 
-            face_path = os.path.join(dir_path, source)
+            face_path = os.path.join(origin_scale, source)
             shape_path = os.path.join(origin_scale, shape)
             color_path = os.path.join(origin_scale, color)
-
+            print(face_path, shape_path)
             scaled_img = image_scale(shape_path, face_path).to('cuda')
             
             transform = T.Compose([T.ToTensor()])
@@ -54,10 +54,11 @@ def main(model_args, args):
 
             transform_toPIL = T.ToPILImage()
 
-            # final_image = hair_fast.swap(face_path, shape_path, color_path, benchmark=args.benchmark, exp_name=None)
-            final_image = hair_fast.swap(transform_toPIL(scaled_img), transform_toPIL(shape_im), transform_toPIL(color_im), benchmark=args.benchmark, exp_name=None)
-            save_image(final_image, 'test_outputs_FaceScale/' + str(cnt).zfill(10) + '.jpg')
-            save_image(torch.cat([final_image, source_im, shape_im, scaled_img], dim=2), 'test_outputsFull_FaceScale/' + str(cnt).zfill(10) + '.jpg')
+            final_image = hair_fast.swap(face_path, shape_path, color_path, benchmark=args.benchmark, exp_name=None)
+            # final_image = hair_fast.swap(transform_toPIL(scaled_img), transform_toPIL(shape_im), transform_toPIL(color_im), benchmark=args.benchmark, exp_name=None)
+            if (cnt == 31): exit()
+            # save_image(final_image, 'test_outputs_FaceScale/' + str(cnt).zfill(10) + '.jpg')
+            # save_image(torch.cat([final_image, source_im, shape_im, scaled_img], dim=2), 'test_outputsFull_FaceScale/' + str(cnt).zfill(10) + '.jpg')
             # exit()
             # break
 

@@ -4,6 +4,7 @@ import numpy as np
 from torchvision.utils import save_image
 import torch
 import torchvision.transforms as transforms
+import matplotlib.pyplot as plt
 
 def get_facial_landmarks(image):
     # Initialize dlib's face detector and facial landmark predictor
@@ -109,16 +110,69 @@ def image_scale(img1_path, img2_path, name=None):
 
     return resized_face
 
+def get_forehead_region(landmarks):
+    # Use points around the eyebrows to estimate the forehead region
+    left_eyebrow = landmarks[17:22]
+    right_eyebrow = landmarks[22:27]
+
+    # Calculate the center points of the eyebrows
+    left_eyebrow_center = np.mean(left_eyebrow, axis=0).astype(int)
+    right_eyebrow_center = np.mean(right_eyebrow, axis=0).astype(int)
+
+    # Estimate the top of the forehead as a point above the center of the eyebrows
+    forehead_top = np.array([int((left_eyebrow_center[0] + right_eyebrow_center[0]) / 2), int((left_eyebrow_center[1] + right_eyebrow_center[1]) / 2 - (right_eyebrow_center[1] - left_eyebrow_center[1]) * 2)])
+    
+    # Define the forehead region as a polygon
+    forehead_points = np.array([left_eyebrow[0], left_eyebrow[4], right_eyebrow[0], right_eyebrow[4], forehead_top])
+
+    return forehead_points
+
+
+def visualize_forehead(image_rgb, forehead_regions):
+    for region in forehead_regions:
+        cv2.polylines(image_rgb, [region], isClosed=True, color=(255, 0, 0), thickness=2)
+    
+    plt.imshow(image_rgb)
+    plt.axis('off')
+    plt.title('Detected Forehead Region')
+    plt.savefig('fennn.png')
+
 cnt = 0
 if (__name__ == "__main__"):
-    
-    with open('datasets/testPair.txt') as file:
-        lines = [line.rstrip() for line in file]
-        for line in lines:
-            cnt += 1
-            source, shape = line.split(' ') 
-            print(source, shape)
-            image_scale('datasets/FFHQ_TrueScale/' + shape, 'datasets/FFHQ_Resized/' + source, source)
+    detector = dlib.get_frontal_face_detector()
+    predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')  # Download this file from dlib's model repository
+
+    image_path = 'datasets/FFHQ_TrueScale/08173.png'
+    image = cv2.imread(image_path)
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    # Detect faces in the image
+    faces = detector(image_rgb)
+
+    # Function to convert dlib's shape object to a numpy array
+    def shape_to_np(shape):
+        coords = np.zeros((68, 2), dtype=int)
+        for i in range(68):
+            coords[i] = (shape.part(i).x, shape.part(i).y)
+        return coords
+
+    # Detect landmarks for each detected face
+    landmarks = []
+    for face in faces:
+        shape = predictor(image_rgb, face)
+        landmarks.append(shape_to_np(shape))
+
+    forehead_regions = [get_forehead_region(landmark) for landmark in landmarks]
+    visualize_forehead(image_rgb, forehead_regions)
+
+
+    # with open('datasets/testPair.txt') as file:
+    #     lines = [line.rstrip() for line in file]
+    #     for line in lines:
+    #         cnt += 1
+    #         source, shape = line.split(' ') 
+    #         print(source, shape)
+    #         image_scale('datasets/FFHQ_TrueScale/' + shape, 'datasets/FFHQ_Resized/' + source, source)
             
 
 

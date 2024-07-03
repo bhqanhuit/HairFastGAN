@@ -3,6 +3,12 @@ import cv2
 import numpy as np
 from torchvision import transforms
 from models.face_parsing.model import BiSeNet
+from torchvision.utils import save_image
+
+transform_ = transforms.Compose([
+        transforms.ToTensor(),
+        # transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+    ])
 
 def load_model(model_path, device):
     model = BiSeNet(n_classes=19)
@@ -34,13 +40,13 @@ def extract_hair_region(mask):
     hair_mask = (mask == hair_class_index).astype(np.uint8)
     return hair_mask
 
-def soft_boundary(mask, boundary_width=10):
+def soft_boundary(mask, boundary_width=3):
     kernel = np.ones((boundary_width, boundary_width), np.uint8)
     dilated = cv2.dilate(mask, kernel, iterations=1)
     eroded = cv2.erode(mask, kernel, iterations=1)
     boundary = dilated - eroded
     soft_mask = cv2.GaussianBlur(boundary.astype(np.float32), (boundary_width, boundary_width), 0)
-    return soft_mask
+    return soft_mask + mask
 
 def main(image_path, model_path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -53,8 +59,10 @@ def main(image_path, model_path):
 
 
     cv2.imwrite('hard_mask.png', mask)
-    print(soft_mask)
-    cv2.imwrite('soft_mask.png', soft_mask)
+    
+    save_image(transform_(soft_mask), 'soft_mask.png', normalize=True)
+    
+
     print("Soft mask saved as 'soft_mask.png'")
 
 if __name__ == "__main__":

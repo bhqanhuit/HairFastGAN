@@ -17,8 +17,7 @@ import torch.nn.functional as F
 import torchvision
 from models.face_parsing.model import BiSeNet
 import matplotlib.pyplot as plt
-import pydensecrf.densecrf as dcrf
-from pydensecrf.utils import unary_from_softmax
+
 import cv2
 
 device = 'cuda'
@@ -165,11 +164,12 @@ def detect_hairline(face_mask, hair_mask):
 
 
 
+
 if __name__ == "__main__":
     model = load_bisenet_model()
     print(f'Done loading BiseNet')
 
-    image_path = 'datasets/FFHQ_TrueScale/08173.png'
+    image_path = 'input/6.png'
     input_image = preprocess_image(image_path)
 
     with torch.no_grad():
@@ -179,37 +179,20 @@ if __name__ == "__main__":
     output_np = output.cpu().numpy().squeeze()
     hair_mask = output_np[17, :, :]
     face_mask = output_np[1, :, :]
-
-    # Resize masks to the original image size
-    hair_mask = cv2.resize(hair_mask, (512, 512))
-    face_mask = cv2.resize(face_mask, (512, 512))
-
-
-    output_np = output.cpu().numpy().squeeze()
-    overlap_mask = create_overlap_mask(output_np)
-    image_np = np.array(Image.open(image_path).resize((512, 512)))
-    crf_output = apply_crf(image_np, output_np)
     
-    # visualize_masks(image_path, output_np, overlap_mask)
-
-    hairline_x, hairline_y = detect_hairline(face_mask, hair_mask)
-
-
-    if hairline_x is not None and hairline_y is not None:
-        original_image = Image.open(image_path).resize((512, 512))
-        original_image_np = np.array(original_image)
-        for x in hairline_x:
-            cv2.circle(original_image_np, (x, hairline_y), 1, (255, 0, 0), -1)
-
-        plt.imshow(original_image_np)
-        plt.axis('off')
-        plt.title('Detected Hairline')
-        plt.savefig('foo.png')
-    else:
-        print("Hairline could not be detected.")
-
-
     
+    # plt.figure(figsize=(15, 5))
+    
+    # plt.subplot(1, 3, 1)
+    # img = Image.open(image_path).convert('RGB')
+    # plt.title('Original Image')
+    # plt.imshow(img)
+    
+    # plt.subplot(1, 3, 2)
+    # plt.title('Soft Mask')
+    # plt.imshow(np.argmax(output_np, axis=0), cmap='jet', alpha=0.5)
+    # plt.savefig('foo.png')
+
 
 
 
